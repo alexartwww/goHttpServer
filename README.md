@@ -22,6 +22,8 @@ My Test Golang project
 1. Encoding support
 1. GZip/Deflate support
 1. Accept header support
+1. Configuration support, update configuration on signal
+1. Other Signals handlers
 1. Multi host support
 1. ...
 
