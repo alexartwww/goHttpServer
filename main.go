@@ -29,6 +29,10 @@ func main() {
 	}
 }
 
+func log(currentTime time.Time, conn net.Conn, iri string, code uint16) {
+	fmt.Println(currentTime.Format(time.RFC3339), conn.RemoteAddr().String(), code, iri)
+}
+
 func handleClient(conn net.Conn) {
 	defer conn.Close()
 
@@ -91,6 +95,7 @@ func handleClient(conn net.Conn) {
 					response200.Headers = append(response200.Headers, http.Header{Name: "Content-Type", Value: reader.Mimetype})
 				}
 				response200.Body = reader.Read()
+				log(currentTime, conn, request.Iri, response200.Code)
 				conn.Write(response200.Build())
 			} else {
 				response403 := http.Response{
@@ -103,6 +108,7 @@ func handleClient(conn net.Conn) {
 					},
 					Body: []byte("<html><head><title>403 Forbidden</title></head><body><h1 style=\"text-align: center;\">404 Not Found</h1><hr><p style=\"text-align: center;\">goHttpServer/0.0.1 " + currentTime.In(geoLocation).Format(time.RFC1123) + "</p></body></html>"),
 				}
+				log(currentTime, conn, request.Iri, response403.Code)
 				conn.Write(response403.Build())
 			}
 			return
@@ -119,6 +125,7 @@ func handleClient(conn net.Conn) {
 		},
 		Body: []byte("<html><head><title>404 Not Found</title></head><body><h1 style=\"text-align: center;\">404 Not Found</h1><hr><p style=\"text-align: center;\">goHttpServer/0.0.1 " + currentTime.In(geoLocation).Format(time.RFC1123) + "</p></body></html>"),
 	}
+	log(currentTime, conn, request.Iri, response404.Code)
 	conn.Write(response404.Build())
 	return
 }
