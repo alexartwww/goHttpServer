@@ -48,6 +48,7 @@ var mimeTypes = map[string]string{
 	".ics": "text/calendar",
 	".jar": "application/java-archive",
 	".jpeg": "image/jpeg",
+	".jpe": "image/jpeg",
 	".jpg": "image/jpeg",
 	".js": "text/javascript",
 	".json": "application/json",
