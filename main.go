@@ -80,16 +80,17 @@ func handleClient(conn net.Conn) {
 					Status: "OK",
 					Headers: []http.Header {
 						{Name: "Server", Value: "goHttpServer/0.0.1"},
+						{Name: "Date", Value: currentTime.In(geoLocation).Format(time.RFC1123)},
 					},
 				}
 				if !reader.DateTime.IsZero() {
-					response200.Headers = append(response200.Headers, http.Header{Name: "Date", Value: reader.DateTime.In(geoLocation).Format(time.RFC1123)})
+					response200.Headers = append(response200.Headers, http.Header{Name: "Last-Modified", Value: reader.DateTime.In(geoLocation).Format(time.RFC1123)})
 				}
 				if reader.ETag != "" {
 					response200.Headers = append(response200.Headers, http.Header{Name: "ETag", Value: reader.ETag})
 				}
 				if reader.Size > 0 {
-					response200.Headers = append(response200.Headers, http.Header{Name: "Content-Size", Value: strconv.Itoa(int(reader.Size))})
+					response200.Headers = append(response200.Headers, http.Header{Name: "Content-Length", Value: strconv.Itoa(int(reader.Size))})
 				}
 				if reader.Mimetype != "" {
 					response200.Headers = append(response200.Headers, http.Header{Name: "Content-Type", Value: reader.Mimetype})
@@ -105,6 +106,7 @@ func handleClient(conn net.Conn) {
 					Status: "Forbidden",
 					Headers: []http.Header {
 						{Name: "Server", Value: "goHttpServer/0.0.1"},
+						{Name: "Date", Value: currentTime.In(geoLocation).Format(time.RFC1123)},
 					},
 					Body: []byte("<html><head><title>403 Forbidden</title></head><body><h1 style=\"text-align: center;\">404 Not Found</h1><hr><p style=\"text-align: center;\">goHttpServer/0.0.1 " + currentTime.In(geoLocation).Format(time.RFC1123) + "</p></body></html>"),
 				}
@@ -122,6 +124,7 @@ func handleClient(conn net.Conn) {
 		Status: "Not Found",
 		Headers: []http.Header {
 			{Name: "Server", Value: "goHttpServer/0.0.1"},
+			{Name: "Date", Value: currentTime.In(geoLocation).Format(time.RFC1123)},
 		},
 		Body: []byte("<html><head><title>404 Not Found</title></head><body><h1 style=\"text-align: center;\">404 Not Found</h1><hr><p style=\"text-align: center;\">goHttpServer/0.0.1 " + currentTime.In(geoLocation).Format(time.RFC1123) + "</p></body></html>"),
 	}
