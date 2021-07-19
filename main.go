@@ -10,9 +10,12 @@ import (
 	"time"
 )
 
+// Config
+// =======================================================
 var address = "localhost:4321"
 var home = "./www"
 var indexes = []string{"", "index.html", "index.htm"}
+// =======================================================
 
 func main() {
 	fmt.Println("Listen http://" + address)
@@ -118,6 +121,7 @@ func handleClient(conn net.Conn) {
 	return
 }
 
+// This will goes to tests
 // =======================================================================
 
 func testRequest() {
