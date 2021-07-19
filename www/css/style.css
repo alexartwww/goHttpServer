@@ -1,9 +1,24 @@
+@font-face {
+    font-family: 'Encode Sans SC';
+    font-style: normal;
+    font-weight: 100;
+    src: url(/fonts/EncodeSansSC/EncodeSansSC-Regular.ttf) format('truetype');
+}
 body {
-    font-family: Ubuntu sans-serif;
+    font-family: 'Encode Sans SC', sans-serif;
 }
 h1 {
-    font-size: 20px;
+    font-size: 40px;
 }
 img {
     width: 400px;
+}
+button {
+    font-family: 'Encode Sans SC', sans-serif;
+    font-size: 16px;
+    padding: 10px 20px;
+    background-color: #404080;
+    color: #fff;
+    border: 1px solid #7777d6;
+    border-radius: 6px;
 }
