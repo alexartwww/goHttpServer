@@ -27,6 +27,8 @@ My Test Golang project
 1. Multi host support
 1. HTTPS support
 1. HTTP/2 support
+1. Performance test
+1. Tests
 1. ...
 
 # You awesome!
