@@ -25,6 +25,8 @@ My Test Golang project
 1. Configuration support, update configuration on signal
 1. Other Signals handlers
 1. Multi host support
+1. HTTPS support
+1. HTTP/2 support
 1. ...
 
 # You awesome!
