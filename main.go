@@ -76,8 +76,10 @@ func handleClient(conn net.Conn) {
 					Status: "OK",
 					Headers: []http.Header {
 						{Name: "Server", Value: "goHttpServer/0.0.1"},
-						{Name: "Date", Value: reader.DateTime.In(geoLocation).Format(time.RFC1123)},
 					},
+				}
+				if !reader.DateTime.IsZero() {
+					response200.Headers = append(response200.Headers, http.Header{Name: "Date", Value: reader.DateTime.In(geoLocation).Format(time.RFC1123)})
 				}
 				if reader.ETag != "" {
 					response200.Headers = append(response200.Headers, http.Header{Name: "ETag", Value: reader.ETag})

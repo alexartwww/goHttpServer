@@ -1,6 +1,9 @@
 package http
 
-import "strconv"
+import (
+	"strconv"
+	"time"
+)
 
 // GET /radio/listen/ HTTP/1.1
 // Host: artem-aleksashkin
@@ -65,9 +68,10 @@ func (response *Response) Build() []byte {
 		result = append(result, []byte(cookie.Name)...)
 		result = append(result, []byte("=")...)
 		result = append(result, []byte(cookie.Value)...)
-		if cookie.Expires != "" {
+		if !cookie.Expires.IsZero() {
 			result = append(result, []byte("; expires=")...)
-			result = append(result, []byte(cookie.Expires)...)
+			geoLocation, _ := time.LoadLocation("GMT")
+			result = append(result, []byte(cookie.Expires.In(geoLocation).Format(time.RFC850))...)
 		}
 		if cookie.MaxAge != 0 {
 			result = append(result, []byte("; Max-Age=")...)
