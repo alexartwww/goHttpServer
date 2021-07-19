@@ -25,8 +25,8 @@ package http
 type Request struct {
 	Method string
 	Iri string
-	IriPath string
-	IriParams []Param
+	Path string
+	Params []Param
 	Protocol string
 	Version string
 	Headers []Header
@@ -35,14 +35,16 @@ type Request struct {
 
 	flagMethod bool
 	flagIri bool
-	flagIriPath bool
-	flagIriParamName bool
-	flagIriParamValue bool
+	flagPath bool
+	flagParamName bool
+	flagParamValue bool
 	flagProtocol bool
 	flagVersion bool
 	flagHeaderName bool
 	flagHeaderValue bool
 	flagHeaderValueSpace bool
+	flagCookieName bool
+	flagCookieValue bool
 	flagBody bool
 }
 
@@ -57,10 +59,33 @@ func (request *Request) switchFlags(v byte) bool {
 	if request.flagMethod && v == byte(' ') {
 		request.flagMethod = false
 		request.flagIri = true
+		request.flagPath = true
 		return true
+	}
+
+	if request.flagPath && v == byte('?') {
+		request.flagPath = false
+		request.flagParamName = true
+		request.flagParamValue = false
+		request.Params = append(request.Params, Param{})
+		return false
+	}
+	if request.flagParamName && v == byte('=') {
+		request.flagParamName = false
+		request.flagParamValue = true
+		return false
+	}
+	if request.flagParamValue && v == byte('&') {
+		request.flagParamName = true
+		request.flagParamValue = false
+		request.Params = append(request.Params, Param{})
+		return false
 	}
 	if request.flagIri && v == byte(' ') {
 		request.flagIri = false
+		request.flagPath = false
+		request.flagParamName = false
+		request.flagParamValue = false
 		request.flagProtocol = true
 		return true
 	}
@@ -72,13 +97,17 @@ func (request *Request) switchFlags(v byte) bool {
 	if request.flagVersion && v == byte('\n') {
 		request.flagVersion = false
 		request.flagHeaderName = true
-		request.Headers = append(request.Headers, Header{Name: "", Value: ""})
+		request.Headers = append(request.Headers, Header{})
 		return true
 	}
 	if request.flagHeaderName && v == byte(':') {
 		request.flagHeaderName = false
 		request.flagHeaderValueSpace = true
 		request.flagHeaderValue = true
+		if len(request.Headers) > 0 && request.Headers[len(request.Headers)-1].Name == "Cookie" {
+			request.flagCookieName = true
+			request.Cookies = append(request.Cookies, Cookie{})
+		}
 		return true
 	}
 	if request.flagHeaderValueSpace && v == byte(' ') {
@@ -88,10 +117,21 @@ func (request *Request) switchFlags(v byte) bool {
 	if request.flagHeaderValueSpace && v != byte(' ') {
 		request.flagHeaderValueSpace = false
 	}
+	if request.flagCookieName && v == byte('=') {
+		request.flagCookieName = false
+		request.flagCookieValue = true
+	}
+	if request.flagCookieValue && v == byte(';') {
+		request.flagCookieValue = false
+		request.flagCookieName = true
+		request.Cookies = append(request.Cookies, Cookie{})
+	}
 	if request.flagHeaderValue && v == byte('\n') {
 		request.flagHeaderValue = false
 		request.flagHeaderName = true
-		request.Headers = append(request.Headers, Header{Name: "", Value: ""})
+		request.flagCookieName = false
+		request.flagCookieValue = false
+		request.Headers = append(request.Headers, Header{})
 		return true
 	}
 	if (request.flagHeaderName) && v == byte('\n') {
@@ -111,6 +151,15 @@ func (request *Request) readChar(v byte) {
 	if request.flagIri {
 		request.Iri = request.Iri + string(v)
 	}
+	if request.flagPath {
+		request.Path = request.Path + string(v)
+	}
+	if request.flagParamName && v != byte('?') && v != byte('&') {
+		request.Params[len(request.Params)-1].Name = request.Params[len(request.Params)-1].Name + string(v)
+	}
+	if request.flagParamValue && v != byte('=') {
+		request.Params[len(request.Params)-1].Value = request.Params[len(request.Params)-1].Value + string(v)
+	}
 	if request.flagProtocol {
 		request.Protocol = request.Protocol + string(v)
 	}
@@ -122,6 +171,12 @@ func (request *Request) readChar(v byte) {
 	}
 	if request.flagHeaderValue {
 		request.Headers[len(request.Headers)-1].Value = request.Headers[len(request.Headers)-1].Value + string(v)
+	}
+	if request.flagCookieName && v != byte(' ') && v != byte(';') && v != byte('=') {
+		request.Cookies[len(request.Cookies)-1].Name = request.Cookies[len(request.Cookies)-1].Name + string(v)
+	}
+	if request.flagCookieValue && v != byte(' ') && v != byte(';') && v != byte('=') {
+		request.Cookies[len(request.Cookies)-1].Value = request.Cookies[len(request.Cookies)-1].Value + string(v)
 	}
 	if request.flagBody {
 		request.Body = append(request.Body, v)

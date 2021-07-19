@@ -27,17 +27,19 @@ import "strconv"
 type Response struct {
 	Protocol string
 	Version string
-	Code uint8
+	Code uint16
 	Status string
 	Headers []Header
 	Cookies []Cookie
 	Body []byte
 }
 
+var delimiter = []byte("\r\n")
+
 func (response *Response) Build() []byte {
 	result := make([]byte, 0)
 
-	// HTTP/1.1 200 OK\n
+	// HTTP/1.1 200 OK\r\n
 	result = append(result, []byte(response.Protocol)...)
 	result = append(result, []byte("/")...)
 	result = append(result, []byte(response.Version)...)
@@ -45,20 +47,56 @@ func (response *Response) Build() []byte {
 	result = append(result, []byte(strconv.Itoa(int(response.Code)))...)
 	result = append(result, []byte(" ")...)
 	result = append(result, []byte(response.Status)...)
-	result = append(result, []byte("\r\n")...)
+	result = append(result, delimiter...)
 
 	// Headers
 	for _, header := range response.Headers {
-		// Server: nginx/1.14.0 (Ubuntu)\n
+		// Server: nginx/1.14.0 (Ubuntu)\r\n
 		result = append(result, []byte(header.Name)...)
 		result = append(result, []byte(": ")...)
 		result = append(result, []byte(header.Value)...)
-		result = append(result, []byte("\r\n")...)
+		result = append(result, delimiter...)
+	}
+
+	// Cookies
+	for _, cookie := range response.Cookies {
+		// Set-Cookie: geography=1; expires=Sun, 01-Aug-2021 01:13:24 GMT; Max-Age=1209600; path=/; domain=artem-aleksashkin\r\n
+		result = append(result, []byte("Set-Cookie: ")...)
+		result = append(result, []byte(cookie.Name)...)
+		result = append(result, []byte("=")...)
+		result = append(result, []byte(cookie.Value)...)
+		if cookie.Expires != "" {
+			result = append(result, []byte("; expires=")...)
+			result = append(result, []byte(cookie.Expires)...)
+		}
+		if cookie.MaxAge != 0 {
+			result = append(result, []byte("; Max-Age=")...)
+			result = append(result, []byte(strconv.Itoa(int(cookie.MaxAge)))...)
+		}
+		if cookie.Path != "" {
+			result = append(result, []byte("; path=")...)
+			result = append(result, []byte(cookie.Path)...)
+		}
+		if cookie.Domain != "" {
+			result = append(result, []byte("; domain=")...)
+			result = append(result, []byte(cookie.Domain)...)
+		}
+		if cookie.Secure {
+			result = append(result, []byte("; secure")...)
+		}
+		if cookie.HttpOnly {
+			result = append(result, []byte("; httponly")...)
+		}
+		if cookie.SameSite != "" {
+			result = append(result, []byte("; samesite=")...)
+			result = append(result, []byte(cookie.SameSite)...)
+		}
+		result = append(result, delimiter...)
 	}
 
 	// Body
 	if len(response.Body) > 0 {
-		result = append(result, []byte("\r\n")...)
+		result = append(result, delimiter...)
 		result = append(result, response.Body...)
 	}
 	return result
