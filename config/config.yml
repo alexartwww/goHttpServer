@@ -1,0 +1,12 @@
+serverName: goHttpServer/0.0.1
+readTimeout: 5s
+writeTimeout: 30s
+maxRequests: 1000
+servers:
+  - listen: 0.0.0.0:4321
+    host: default
+    home: ./www
+    indexes:
+      - index.html
+      - index.htm
+    logFormat: json

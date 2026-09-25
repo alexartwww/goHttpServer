@@ -2,7 +2,6 @@ package http
 
 import (
 	"strconv"
-	"time"
 )
 
 // GET /radio/listen/ HTTP/1.1
@@ -40,68 +39,68 @@ type Response struct {
 var delimiter = []byte("\r\n")
 
 func (response *Response) Build() []byte {
-	result := make([]byte, 0)
+	result := response.AppendHead(make([]byte, 0, 256+len(response.Body)))
+	return append(result, response.Body...)
+}
+
+// AppendHead appends the status line, headers and the empty line, without the body.
+func (response *Response) AppendHead(result []byte) []byte {
 
 	// HTTP/1.1 200 OK\r\n
-	result = append(result, []byte(response.Protocol)...)
-	result = append(result, []byte("/")...)
-	result = append(result, []byte(response.Version)...)
-	result = append(result, []byte(" ")...)
-	result = append(result, []byte(strconv.Itoa(int(response.Code)))...)
-	result = append(result, []byte(" ")...)
-	result = append(result, []byte(response.Status)...)
+	result = append(result, response.Protocol...)
+	result = append(result, "/"...)
+	result = append(result, response.Version...)
+	result = append(result, " "...)
+	result = strconv.AppendInt(result, int64(response.Code), 10)
+	result = append(result, " "...)
+	result = append(result, response.Status...)
 	result = append(result, delimiter...)
 
 	// Headers
 	for _, header := range response.Headers {
 		// Server: nginx/1.14.0 (Ubuntu)\r\n
-		result = append(result, []byte(header.Name)...)
-		result = append(result, []byte(": ")...)
-		result = append(result, []byte(header.Value)...)
+		result = append(result, header.Name...)
+		result = append(result, ": "...)
+		result = append(result, header.Value...)
 		result = append(result, delimiter...)
 	}
 
 	// Cookies
 	for _, cookie := range response.Cookies {
 		// Set-Cookie: geography=1; expires=Sun, 01-Aug-2021 01:13:24 GMT; Max-Age=1209600; path=/; domain=artem-aleksashkin\r\n
-		result = append(result, []byte("Set-Cookie: ")...)
-		result = append(result, []byte(cookie.Name)...)
-		result = append(result, []byte("=")...)
-		result = append(result, []byte(cookie.Value)...)
+		result = append(result, "Set-Cookie: "...)
+		result = append(result, cookie.Name...)
+		result = append(result, "="...)
+		result = append(result, cookie.Value...)
 		if !cookie.Expires.IsZero() {
-			result = append(result, []byte("; expires=")...)
-			geoLocation, _ := time.LoadLocation("GMT")
-			result = append(result, []byte(cookie.Expires.In(geoLocation).Format(time.RFC850))...)
+			result = append(result, "; expires="...)
+			result = append(result, []byte(FormatTime(cookie.Expires))...)
 		}
 		if cookie.MaxAge != 0 {
-			result = append(result, []byte("; Max-Age=")...)
-			result = append(result, []byte(strconv.Itoa(int(cookie.MaxAge)))...)
+			result = append(result, "; Max-Age="...)
+			result = strconv.AppendUint(result, cookie.MaxAge, 10)
 		}
 		if cookie.Path != "" {
-			result = append(result, []byte("; path=")...)
-			result = append(result, []byte(cookie.Path)...)
+			result = append(result, "; path="...)
+			result = append(result, cookie.Path...)
 		}
 		if cookie.Domain != "" {
-			result = append(result, []byte("; domain=")...)
-			result = append(result, []byte(cookie.Domain)...)
+			result = append(result, "; domain="...)
+			result = append(result, cookie.Domain...)
 		}
 		if cookie.Secure {
-			result = append(result, []byte("; secure")...)
+			result = append(result, "; secure"...)
 		}
 		if cookie.HttpOnly {
-			result = append(result, []byte("; httponly")...)
+			result = append(result, "; httponly"...)
 		}
 		if cookie.SameSite != "" {
-			result = append(result, []byte("; samesite=")...)
-			result = append(result, []byte(cookie.SameSite)...)
+			result = append(result, "; samesite="...)
+			result = append(result, cookie.SameSite...)
 		}
 		result = append(result, delimiter...)
 	}
 
-	// Body
-	if len(response.Body) > 0 {
-		result = append(result, delimiter...)
-		result = append(result, response.Body...)
-	}
-	return result
+	// The empty line ends the head even when there is no body
+	return append(result, delimiter...)
 }

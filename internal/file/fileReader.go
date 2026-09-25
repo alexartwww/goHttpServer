@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 )
 
@@ -114,22 +115,6 @@ func (file *File) checkExist() bool {
 	return true
 }
 
-func (file *File) checkReadable() bool {
-	f, err := os.Open(file.Name)
-	if err != nil {
-		return false
-	}
-	if file.info.Size() > 0 {
-		b1 := make([]byte, 1)
-		_, err2 := f.Read(b1)
-		if err2 != nil {
-			return false
-		}
-	}
-	f.Close()
-	return true
-}
-
 func (file *File) checkDirectory() bool {
 	return file.info.IsDir()
 }
@@ -155,8 +140,9 @@ func (file *File) getEncoding() string {
 	return ""
 }
 
+// Like nginx: modification time and size, both in hex.
 func (file *File) getETag() string {
-	return ""
+	return "\"" + strconv.FormatInt(file.info.ModTime().Unix(), 16) + "-" + strconv.FormatInt(file.info.Size(), 16) + "\""
 }
 
 func (file *File) Info(name string) {
@@ -167,14 +153,11 @@ func (file *File) Info(name string) {
 	if file.Exist {
 		file.Directory = file.checkDirectory()
 		if !file.Directory {
-			file.Readable = file.checkReadable()
-			if file.Readable {
-				file.Size = file.getSize()
-				file.DateTime = file.getDateTime()
-				file.Mimetype = file.getMimetype()
-				file.Encoding = file.getEncoding()
-				file.ETag = file.getETag()
-			}
+			file.Size = file.getSize()
+			file.DateTime = file.getDateTime()
+			file.Mimetype = file.getMimetype()
+			file.Encoding = file.getEncoding()
+			file.ETag = file.getETag()
 		}
 	}
 }
@@ -200,4 +183,11 @@ func (file *File) Read() []byte {
 	}
 	f.Close()
 	return result
+}
+
+// Open is the readability check: a failed open with a permission error means 403.
+func (file *File) Open() (*os.File, error) {
+	f, err := os.Open(file.Name)
+	file.Readable = err == nil
+	return f, err
 }
